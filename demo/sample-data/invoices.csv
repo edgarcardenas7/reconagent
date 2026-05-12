@@ -1,0 +1,4 @@
+vendor_name,invoice_number,amount,currency,invoice_date,due_date,po_number,bank_account
+Acme GmbH,INV-001,1000.00,EUR,2026-05-01,2026-05-31,PO-1,DE123
+Beta BV,INV-002,5000.00,EUR,2026-04-01,2026-04-30,,NL111
+Gamma SARL,INV-003,1200.00,EUR,2026-03-01,2026-03-31,PO-9,FR123

@@ -1,0 +1,4 @@
+vendor_name,amount,currency,payment_date,bank_account,reference
+Acme GmbH,1000.00,EUR,2026-05-03,DE123,INV-001
+Beta BV,5000.00,EUR,2026-04-04,NL222,INV-002
+Beta BV,5000.00,EUR,2026-04-05,NL222,INV-002 DUP

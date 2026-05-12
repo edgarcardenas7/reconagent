@@ -1,0 +1,4 @@
+title,body,risk_level
+Duplicate payment policy,"Duplicate payments inside seven days must be held for review. The controller must verify vendor, invoice number, payment reference, and bank account before release.",high
+PO policy,"Invoices without purchase orders require a document request before payment. Finance analysts may request documentation, but controllers approve payment release.",medium
+Bank account change policy,"Changed vendor bank accounts are high risk. Any bank account mismatch must be escalated to the controller and cannot be auto-approved.",high
