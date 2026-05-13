@@ -1,12 +1,24 @@
 from datetime import date
 
-from reconagent.domain.money import cents_to_decimal, parse_amount_to_cents
+import pytest
+
+from reconagent.domain.money import cents_to_decimal, format_cents, parse_amount_to_cents
 from reconagent.domain.normalization import normalize_invoice_row, normalize_name, normalize_reference
 
 
 def test_money_is_parsed_to_integer_minor_units():
     assert parse_amount_to_cents("1,234.56") == 123456
     assert cents_to_decimal(123456).as_tuple().exponent == -2
+    assert format_cents(123456) == "1234.56"
+
+
+def test_money_rejects_invalid_or_ambiguous_amounts():
+    with pytest.raises(ValueError, match="at most two decimal places"):
+        parse_amount_to_cents("10.999")
+    with pytest.raises(ValueError, match="cannot be empty"):
+        parse_amount_to_cents("")
+    with pytest.raises(ValueError, match="cannot be negative"):
+        parse_amount_to_cents("-1.00")
 
 
 def test_vendor_and_reference_normalization_removes_format_noise():
