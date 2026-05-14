@@ -1,4 +1,4 @@
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 
 def parse_amount_to_cents(value: str | int | Decimal) -> int:
@@ -18,6 +18,14 @@ def parse_amount_to_cents(value: str | int | Decimal) -> int:
     if cents != cents.to_integral_value():
         raise ValueError("Money amount must have at most two decimal places")
 
+    return decimal_to_cents(amount)
+
+
+def decimal_to_cents(amount: Decimal, rounding: str = ROUND_HALF_UP) -> int:
+    if amount < 0:
+        raise ValueError("Money amount cannot be negative")
+
+    cents = (amount * Decimal("100")).quantize(Decimal("1"), rounding=rounding)
     return int(cents)
 
 

@@ -1,8 +1,14 @@
 from datetime import date
+from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 
 import pytest
 
-from reconagent.domain.money import cents_to_decimal, format_cents, parse_amount_to_cents
+from reconagent.domain.money import (
+    cents_to_decimal,
+    decimal_to_cents,
+    format_cents,
+    parse_amount_to_cents,
+)
 from reconagent.domain.normalization import normalize_invoice_row, normalize_name, normalize_reference
 
 
@@ -19,6 +25,14 @@ def test_money_rejects_invalid_or_ambiguous_amounts():
         parse_amount_to_cents("")
     with pytest.raises(ValueError, match="cannot be negative"):
         parse_amount_to_cents("-1.00")
+
+
+def test_decimal_to_cents_rounds_intermediate_financial_calculations_explicitly():
+    tax_amount = Decimal("19.99") * Decimal("0.21")
+
+    assert tax_amount == Decimal("4.1979")
+    assert decimal_to_cents(tax_amount, rounding=ROUND_HALF_UP) == 420
+    assert decimal_to_cents(tax_amount, rounding=ROUND_DOWN) == 419
 
 
 def test_vendor_and_reference_normalization_removes_format_noise():
