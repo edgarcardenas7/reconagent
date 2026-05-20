@@ -120,6 +120,10 @@ class ReconciliationRun(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime)
     error: Mapped[str | None] = mapped_column(Text)
 
+    matches: Mapped[list[ReconciliationMatch]] = relationship(back_populates="run")
+    exceptions: Mapped[list[ReconciliationException]] = relationship(back_populates="run")
+    audit_events: Mapped[list[AuditEvent]] = relationship(back_populates="run")
+
 
 class ReconciliationMatch(Base):
     __tablename__ = "reconciliation_matches"
@@ -133,6 +137,8 @@ class ReconciliationMatch(Base):
     score_components: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String(40), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+    run: Mapped[ReconciliationRun] = relationship(back_populates="matches")
 
 
 class ReconciliationException(Base):
@@ -152,6 +158,9 @@ class ReconciliationException(Base):
     status: Mapped[str] = mapped_column(String(40), default="open", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
+    run: Mapped[ReconciliationRun] = relationship(back_populates="exceptions")
+    approvals: Mapped[list[Approval]] = relationship(back_populates="exception")
+
 
 class Approval(Base):
     __tablename__ = "approvals"
@@ -165,6 +174,8 @@ class Approval(Base):
     decided_at: Mapped[datetime | None] = mapped_column(DateTime)
     note: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+    exception: Mapped[ReconciliationException] = relationship(back_populates="approvals")
 
 
 class AuditEvent(Base):
@@ -180,3 +191,5 @@ class AuditEvent(Base):
     previous_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     event_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+    run: Mapped[ReconciliationRun | None] = relationship(back_populates="audit_events")
