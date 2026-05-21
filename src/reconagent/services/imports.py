@@ -24,10 +24,20 @@ def get_or_create_vendor(session: Session, name: str, normalized_name: str) -> V
     return vendor
 
 
+def source_hash_exists(
+    session: Session,
+    model: type[Invoice] | type[Payment] | type[LedgerEntry],
+    source_hash: str,
+) -> bool:
+    return session.scalar(select(model.id).where(model.source_hash == source_hash)) is not None
+
+
 def import_invoices(session: Session, content: bytes) -> list[str]:
     ids: list[str] = []
     for row in read_csv_bytes(content):
         data = normalize_invoice_row(row)
+        if source_hash_exists(session, Invoice, data["source_hash"]):
+            continue
         vendor = get_or_create_vendor(
             session, data.pop("vendor_name"), data.pop("normalized_vendor_name")
         )
@@ -43,6 +53,8 @@ def import_payments(session: Session, content: bytes) -> list[str]:
     ids: list[str] = []
     for row in read_csv_bytes(content):
         data = normalize_payment_row(row)
+        if source_hash_exists(session, Payment, data["source_hash"]):
+            continue
         vendor = get_or_create_vendor(
             session, data.pop("vendor_name"), data.pop("normalized_vendor_name")
         )
@@ -58,6 +70,8 @@ def import_ledger_entries(session: Session, content: bytes) -> list[str]:
     ids: list[str] = []
     for row in read_csv_bytes(content):
         data = normalize_ledger_row(row)
+        if source_hash_exists(session, LedgerEntry, data["source_hash"]):
+            continue
         vendor = get_or_create_vendor(
             session, data.pop("vendor_name"), data.pop("normalized_vendor_name")
         )
