@@ -22,7 +22,7 @@ def normalize_reference(value: str) -> str:
 
 def normalize_currency(value: str) -> str:
     currency = value.strip().upper()
-    if len(currency) != 3:
+    if len(currency) != 3 or not currency.isalpha():
         raise ValueError(f"Currency must be ISO-4217 style code, got {value!r}")
     return currency
 

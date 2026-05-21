@@ -9,7 +9,12 @@ from reconagent.domain.money import (
     format_cents,
     parse_amount_to_cents,
 )
-from reconagent.domain.normalization import normalize_invoice_row, normalize_name, normalize_reference
+from reconagent.domain.normalization import (
+    normalize_currency,
+    normalize_invoice_row,
+    normalize_name,
+    normalize_reference,
+)
 
 
 def test_money_is_parsed_to_integer_minor_units():
@@ -38,6 +43,14 @@ def test_decimal_to_cents_rounds_intermediate_financial_calculations_explicitly(
 def test_vendor_and_reference_normalization_removes_format_noise():
     assert normalize_name(" ACME, GmbH ") == "acme gmbh"
     assert normalize_reference("INV-2026/001") == "inv2026001"
+
+
+def test_currency_normalization_requires_three_letters():
+    assert normalize_currency(" eur ") == "EUR"
+    with pytest.raises(ValueError, match="ISO-4217"):
+        normalize_currency("EU")
+    with pytest.raises(ValueError, match="ISO-4217"):
+        normalize_currency("EU1")
 
 
 def test_invoice_row_normalization_keeps_money_as_cents():
