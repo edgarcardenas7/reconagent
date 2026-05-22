@@ -56,6 +56,57 @@ def test_ledger_import_is_idempotent_by_source_hash(db_session):
     assert ledger_count == 1
 
 
+def test_invoice_import_rolls_back_all_rows_when_one_row_is_invalid(db_session):
+    content = (
+        b"vendor_name,invoice_number,amount,currency,invoice_date,due_date,po_number,bank_account\n"
+        b"Acme GmbH,INV-001,1000.00,EUR,2026-05-01,2026-05-31,PO-1,DE123\n"
+        b"Beta BV,INV-002,5000.00,EU1,2026-04-01,2026-04-30,,NL111\n"
+    )
+
+    with pytest.raises(ValueError):
+        import_invoices(db_session, content)
+
+    invoice_count = db_session.scalar(select(func.count()).select_from(Invoice))
+    vendor_count = db_session.scalar(select(func.count()).select_from(Vendor))
+
+    assert invoice_count == 0
+    assert vendor_count == 0
+
+
+def test_payment_import_rolls_back_all_rows_when_one_row_is_invalid(db_session):
+    content = (
+        b"vendor_name,amount,currency,payment_date,bank_account,reference\n"
+        b"Acme GmbH,1000.00,EUR,2026-05-03,DE123,INV-001\n"
+        b"Beta BV,5000.00,EU1,2026-04-04,NL222,INV-002\n"
+    )
+
+    with pytest.raises(ValueError):
+        import_payments(db_session, content)
+
+    payment_count = db_session.scalar(select(func.count()).select_from(Payment))
+    vendor_count = db_session.scalar(select(func.count()).select_from(Vendor))
+
+    assert payment_count == 0
+    assert vendor_count == 0
+
+
+def test_ledger_import_rolls_back_all_rows_when_one_row_is_invalid(db_session):
+    content = (
+        b"vendor_name,amount,currency,entry_date,account_code,description,reference\n"
+        b"Acme GmbH,1000.00,EUR,2026-05-02,2000,Invoice booked,INV-001\n"
+        b"Beta BV,5000.00,EU1,2026-04-02,2000,Invoice booked,INV-002\n"
+    )
+
+    with pytest.raises(ValueError):
+        import_ledger_entries(db_session, content)
+
+    ledger_count = db_session.scalar(select(func.count()).select_from(LedgerEntry))
+    vendor_count = db_session.scalar(select(func.count()).select_from(Vendor))
+
+    assert ledger_count == 0
+    assert vendor_count == 0
+
+
 def test_invoice_source_hash_is_unique_at_database_level(db_session):
     vendor = Vendor(name="Acme GmbH", normalized_name="acme gmbh")
     db_session.add(vendor)
