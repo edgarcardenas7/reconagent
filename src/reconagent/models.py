@@ -42,7 +42,7 @@ class Invoice(Base):
     po_number: Mapped[str | None] = mapped_column(String(100))
     bank_account: Mapped[str | None] = mapped_column(String(64))
     status: Mapped[str] = mapped_column(String(40), default="imported", nullable=False)
-    source_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     raw_payload: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
@@ -61,7 +61,7 @@ class Payment(Base):
     bank_account: Mapped[str] = mapped_column(String(64), nullable=False)
     reference: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[str] = mapped_column(String(40), default="imported", nullable=False)
-    source_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     raw_payload: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
@@ -80,7 +80,7 @@ class LedgerEntry(Base):
     entry_date: Mapped[date] = mapped_column(Date, nullable=False)
     description: Mapped[str] = mapped_column(String(255), nullable=False)
     reference: Mapped[str] = mapped_column(String(255), nullable=False)
-    source_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     raw_payload: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
