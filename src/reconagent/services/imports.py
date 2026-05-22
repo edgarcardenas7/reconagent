@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -32,94 +34,100 @@ def source_hash_exists(
     return session.scalar(select(model.id).where(model.source_hash == source_hash)) is not None
 
 
-def import_invoices(session: Session, content: bytes) -> list[str]:
-    ids: list[str] = []
+def _run_import_transaction(session: Session, import_rows: Callable[[], list[str]]) -> list[str]:
     try:
-        for row in read_csv_bytes(content):
-            data = normalize_invoice_row(row)
-            if source_hash_exists(session, Invoice, data["source_hash"]):
-                continue
-            vendor = get_or_create_vendor(
-                session, data.pop("vendor_name"), data.pop("normalized_vendor_name")
-            )
-            invoice = Invoice(vendor_id=vendor.id, vendor_name=vendor.name, **data)
-            session.add(invoice)
-            session.flush()
-            ids.append(invoice.id)
+        ids = import_rows()
         session.commit()
         return ids
     except Exception:
         session.rollback()
         raise
+
+
+def _import_invoice_rows(session: Session, content: bytes) -> list[str]:
+    ids: list[str] = []
+    for row in read_csv_bytes(content):
+        data = normalize_invoice_row(row)
+        if source_hash_exists(session, Invoice, data["source_hash"]):
+            continue
+        vendor = get_or_create_vendor(
+            session, data.pop("vendor_name"), data.pop("normalized_vendor_name")
+        )
+        invoice = Invoice(vendor_id=vendor.id, vendor_name=vendor.name, **data)
+        session.add(invoice)
+        session.flush()
+        ids.append(invoice.id)
+    return ids
+
+
+def import_invoices(session: Session, content: bytes) -> list[str]:
+    return _run_import_transaction(session, lambda: _import_invoice_rows(session, content))
+
+
+def _import_payment_rows(session: Session, content: bytes) -> list[str]:
+    ids: list[str] = []
+    for row in read_csv_bytes(content):
+        data = normalize_payment_row(row)
+        if source_hash_exists(session, Payment, data["source_hash"]):
+            continue
+        vendor = get_or_create_vendor(
+            session, data.pop("vendor_name"), data.pop("normalized_vendor_name")
+        )
+        payment = Payment(vendor_id=vendor.id, vendor_name=vendor.name, **data)
+        session.add(payment)
+        session.flush()
+        ids.append(payment.id)
+    return ids
 
 
 def import_payments(session: Session, content: bytes) -> list[str]:
+    return _run_import_transaction(session, lambda: _import_payment_rows(session, content))
+
+
+def _import_ledger_rows(session: Session, content: bytes) -> list[str]:
     ids: list[str] = []
-    try:
-        for row in read_csv_bytes(content):
-            data = normalize_payment_row(row)
-            if source_hash_exists(session, Payment, data["source_hash"]):
-                continue
-            vendor = get_or_create_vendor(
-                session, data.pop("vendor_name"), data.pop("normalized_vendor_name")
-            )
-            payment = Payment(vendor_id=vendor.id, vendor_name=vendor.name, **data)
-            session.add(payment)
-            session.flush()
-            ids.append(payment.id)
-        session.commit()
-        return ids
-    except Exception:
-        session.rollback()
-        raise
+    for row in read_csv_bytes(content):
+        data = normalize_ledger_row(row)
+        if source_hash_exists(session, LedgerEntry, data["source_hash"]):
+            continue
+        vendor = get_or_create_vendor(
+            session, data.pop("vendor_name"), data.pop("normalized_vendor_name")
+        )
+        entry = LedgerEntry(vendor_id=vendor.id, vendor_name=vendor.name, **data)
+        session.add(entry)
+        session.flush()
+        ids.append(entry.id)
+    return ids
 
 
 def import_ledger_entries(session: Session, content: bytes) -> list[str]:
+    return _run_import_transaction(session, lambda: _import_ledger_rows(session, content))
+
+
+def _import_policy_rows(session: Session, content: bytes) -> list[str]:
     ids: list[str] = []
-    try:
-        for row in read_csv_bytes(content):
-            data = normalize_ledger_row(row)
-            if source_hash_exists(session, LedgerEntry, data["source_hash"]):
-                continue
-            vendor = get_or_create_vendor(
-                session, data.pop("vendor_name"), data.pop("normalized_vendor_name")
+    for row in read_csv_bytes(content):
+        policy = FinancePolicy(
+            title=row["title"].strip(),
+            body=row["body"].strip(),
+            risk_level=row.get("risk_level", "medium").strip() or "medium",
+        )
+        session.add(policy)
+        session.flush()
+        for chunk in chunk_policy(policy.body):
+            session.add(
+                PolicyChunk(
+                    policy_id=policy.id,
+                    chunk_text=chunk,
+                    embedding_json=str(local_text_embedding(chunk)),
+                )
             )
-            entry = LedgerEntry(vendor_id=vendor.id, vendor_name=vendor.name, **data)
-            session.add(entry)
-            session.flush()
-            ids.append(entry.id)
-        session.commit()
-        return ids
-    except Exception:
-        session.rollback()
-        raise
+        ids.append(policy.id)
+    return ids
 
 
 def import_policies(session: Session, content: bytes) -> list[str]:
-    ids: list[str] = []
-    try:
-        for row in read_csv_bytes(content):
-            policy = FinancePolicy(
-                title=row["title"].strip(),
-                body=row["body"].strip(),
-                risk_level=row.get("risk_level", "medium").strip() or "medium",
-            )
-            session.add(policy)
-            session.flush()
-            for chunk in chunk_policy(policy.body):
-                session.add(
-                    PolicyChunk(
-                        policy_id=policy.id,
-                        chunk_text=chunk,
-                        embedding_json=str(local_text_embedding(chunk)),
-                    )
-                )
-            ids.append(policy.id)
-        session.commit()
-        return ids
-    except Exception:
-        session.rollback()
-        raise
+    return _run_import_transaction(session, lambda: _import_policy_rows(session, content))
 
 
 def chunk_policy(text: str, max_chars: int = 700) -> list[str]:
