@@ -88,3 +88,70 @@ def test_amount_mismatch_keeps_match_but_lowers_score():
 
     assert result.status == "matched"
     assert result.components["amount_match"] == 20
+
+
+def test_currency_mismatch_prevents_payment_match():
+    vendor = make_vendor()
+    invoice = Invoice(
+        vendor_id=vendor.id,
+        vendor_name=vendor.name,
+        invoice_number="INV-003",
+        amount_cents=100000,
+        currency="EUR",
+        invoice_date=date(2026, 5, 1),
+        due_date=date(2026, 5, 31),
+        po_number="PO-1",
+        source_hash="invoice-hash",
+        raw_payload="{}",
+    )
+    payment = Payment(
+        vendor_id=vendor.id,
+        vendor_name=vendor.name,
+        amount_cents=100000,
+        currency="USD",
+        payment_date=date(2026, 5, 2),
+        bank_account="DE123",
+        reference="INV-003",
+        source_hash="payment-hash",
+        raw_payload="{}",
+    )
+
+    result = MatchingEngine().find_best_match(invoice, [payment], [])
+
+    assert result.status == "unmatched"
+    assert result.payment is None
+    assert result.score == 0
+
+
+def test_currency_mismatch_prevents_ledger_match():
+    vendor = make_vendor()
+    invoice = Invoice(
+        vendor_id=vendor.id,
+        vendor_name=vendor.name,
+        invoice_number="INV-004",
+        amount_cents=100000,
+        currency="EUR",
+        invoice_date=date(2026, 5, 1),
+        due_date=date(2026, 5, 31),
+        po_number="PO-1",
+        source_hash="invoice-hash",
+        raw_payload="{}",
+    )
+    ledger = LedgerEntry(
+        vendor_id=vendor.id,
+        vendor_name=vendor.name,
+        amount_cents=100000,
+        currency="USD",
+        account_code="2000",
+        entry_date=date(2026, 5, 2),
+        description="Invoice booked",
+        reference="INV-004",
+        source_hash="ledger-hash",
+        raw_payload="{}",
+    )
+
+    result = MatchingEngine().find_best_match(invoice, [], [ledger])
+
+    assert result.status == "unmatched"
+    assert result.ledger_entry is None
+    assert result.score == 0

@@ -24,7 +24,12 @@ class MatchingEngine:
         payments: list[Payment],
         ledger_entries: list[LedgerEntry],
     ) -> MatchResult:
-        candidates = [self.score_invoice_payment(invoice, payment) for payment in payments]
+        same_currency_payments = [
+            payment for payment in payments if payment.currency == invoice.currency
+        ]
+        candidates = [
+            self.score_invoice_payment(invoice, payment) for payment in same_currency_payments
+        ]
         best_payment, components = max(candidates, key=lambda item: sum(item[1].values()), default=(None, {}))
         ledger_entry = self.find_ledger_entry(invoice, ledger_entries)
 
@@ -53,10 +58,11 @@ class MatchingEngine:
     ) -> LedgerEntry | None:
         for entry in ledger_entries:
             days = abs((entry.entry_date - invoice.invoice_date).days)
+            same_currency = entry.currency == invoice.currency
             same_vendor = entry.vendor_id == invoice.vendor_id
             same_amount = entry.amount_cents == invoice.amount_cents
             ref_match = normalize_reference(invoice.invoice_number) in normalize_reference(entry.reference)
-            if same_vendor and same_amount and (days <= 14 or ref_match):
+            if same_currency and same_vendor and same_amount and (days <= 14 or ref_match):
                 return entry
         return None
 
