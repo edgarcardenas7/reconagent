@@ -58,6 +58,57 @@ def test_exception_detector_finds_duplicate_payment_missing_po_and_changed_bank_
     assert {"missing_po", "changed_bank_account", "duplicate_payment"}.issubset(types)
 
 
+def test_duplicate_payment_detection_ignores_same_amount_in_different_currency():
+    vendor = Vendor(id="vendor-1", name="Acme GmbH", normalized_name="acme gmbh")
+    invoice = Invoice(
+        id="inv-1",
+        vendor_id=vendor.id,
+        vendor_name=vendor.name,
+        invoice_number="INV-001",
+        amount_cents=500000,
+        currency="EUR",
+        invoice_date=date(2026, 5, 1),
+        due_date=date(2026, 5, 31),
+        po_number="PO-1",
+        bank_account="DE-OLD",
+        source_hash="invoice-hash",
+        raw_payload="{}",
+    )
+    eur_payment = Payment(
+        id="pay-1",
+        vendor_id=vendor.id,
+        vendor_name=vendor.name,
+        amount_cents=500000,
+        currency="EUR",
+        payment_date=date(2026, 5, 2),
+        bank_account="DE-OLD",
+        reference="INV-001",
+        source_hash="payment-hash-1",
+        raw_payload="{}",
+    )
+    usd_payment = Payment(
+        id="pay-2",
+        vendor_id=vendor.id,
+        vendor_name=vendor.name,
+        amount_cents=500000,
+        currency="USD",
+        payment_date=date(2026, 5, 3),
+        bank_account="DE-OLD",
+        reference="INV-001",
+        source_hash="payment-hash-2",
+        raw_payload="{}",
+    )
+
+    match = MatchingEngine().find_best_match(invoice, [eur_payment, usd_payment], [])
+    exceptions = ExceptionDetector().detect_for_invoice(
+        invoice,
+        match,
+        [eur_payment, usd_payment],
+    )
+
+    assert "duplicate_payment" not in {exception.exception_type for exception in exceptions}
+
+
 def test_audit_hash_chain_links_events(db_session):
     audit = AuditService()
 

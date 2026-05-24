@@ -88,7 +88,11 @@ class ExceptionDetector:
         self, invoice: Invoice, payments: list[Payment]
     ) -> list[DetectedException]:
         related = [
-            p for p in payments if p.vendor_id == invoice.vendor_id and p.amount_cents == invoice.amount_cents
+            p
+            for p in payments
+            if p.vendor_id == invoice.vendor_id
+            and p.amount_cents == invoice.amount_cents
+            and p.currency == invoice.currency
         ]
         duplicates: list[DetectedException] = []
         for index, payment in enumerate(related):
