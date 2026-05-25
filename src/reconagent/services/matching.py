@@ -41,7 +41,8 @@ class MatchingEngine:
         score = sum(components.values()) if components else 0
         status = "matched" if score >= 70 else "unmatched"
         matched_payment = best_payment if status == "matched" else None
-        return MatchResult(matched_payment, ledger_entry, score, components, status)
+        matched_ledger_entry = ledger_entry if status == "matched" else None
+        return MatchResult(matched_payment, matched_ledger_entry, score, components, status)
 
     def score_invoice_payment(
         self, invoice: Invoice, payment: Payment

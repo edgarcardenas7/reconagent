@@ -188,3 +188,37 @@ def test_low_confidence_payment_candidate_is_not_returned_as_match():
     assert result.status == "unmatched"
     assert result.payment is None
     assert result.score < 70
+
+
+def test_ledger_candidate_is_not_returned_when_full_match_is_unmatched():
+    vendor = make_vendor()
+    invoice = Invoice(
+        vendor_id=vendor.id,
+        vendor_name=vendor.name,
+        invoice_number="INV-006",
+        amount_cents=100000,
+        currency="EUR",
+        invoice_date=date(2026, 5, 1),
+        due_date=date(2026, 5, 31),
+        po_number="PO-1",
+        source_hash="invoice-hash",
+        raw_payload="{}",
+    )
+    ledger = LedgerEntry(
+        vendor_id=vendor.id,
+        vendor_name=vendor.name,
+        amount_cents=100000,
+        currency="EUR",
+        account_code="2000",
+        entry_date=date(2026, 5, 2),
+        description="Invoice booked",
+        reference="INV-006",
+        source_hash="ledger-hash",
+        raw_payload="{}",
+    )
+
+    result = MatchingEngine().find_best_match(invoice, [], [ledger])
+
+    assert result.status == "unmatched"
+    assert result.ledger_entry is None
+    assert result.components["ledger_consistency"] == 5
