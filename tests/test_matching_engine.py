@@ -155,3 +155,36 @@ def test_currency_mismatch_prevents_ledger_match():
     assert result.status == "unmatched"
     assert result.ledger_entry is None
     assert result.score == 0
+
+
+def test_low_confidence_payment_candidate_is_not_returned_as_match():
+    vendor = make_vendor()
+    invoice = Invoice(
+        vendor_id=vendor.id,
+        vendor_name=vendor.name,
+        invoice_number="INV-005",
+        amount_cents=100000,
+        currency="EUR",
+        invoice_date=date(2026, 5, 1),
+        due_date=date(2026, 5, 31),
+        po_number="PO-1",
+        source_hash="invoice-hash",
+        raw_payload="{}",
+    )
+    payment = Payment(
+        vendor_id="different-vendor",
+        vendor_name="Different Vendor",
+        amount_cents=75000,
+        currency="EUR",
+        payment_date=date(2026, 7, 15),
+        bank_account="DE123",
+        reference="unrelated transfer",
+        source_hash="payment-hash",
+        raw_payload="{}",
+    )
+
+    result = MatchingEngine().find_best_match(invoice, [payment], [])
+
+    assert result.status == "unmatched"
+    assert result.payment is None
+    assert result.score < 70
