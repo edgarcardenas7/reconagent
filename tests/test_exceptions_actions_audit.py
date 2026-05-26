@@ -6,7 +6,7 @@ from sqlalchemy import select
 from reconagent.models import Approval, Invoice, Payment, Vendor
 from reconagent.services.approvals import ApprovalService
 from reconagent.services.audit import AuditService
-from reconagent.services.exceptions import ExceptionDetector
+from reconagent.services.exceptions import ExceptionDetector, references_are_compatible
 from reconagent.services.matching import MatchingEngine
 
 
@@ -107,6 +107,66 @@ def test_duplicate_payment_detection_ignores_same_amount_in_different_currency()
     )
 
     assert "duplicate_payment" not in {exception.exception_type for exception in exceptions}
+
+
+def test_duplicate_payment_detection_ignores_same_amount_with_different_references():
+    vendor = Vendor(id="vendor-1", name="Acme GmbH", normalized_name="acme gmbh")
+    invoice = Invoice(
+        id="inv-1",
+        vendor_id=vendor.id,
+        vendor_name=vendor.name,
+        invoice_number="INV-001",
+        amount_cents=500000,
+        currency="EUR",
+        invoice_date=date(2026, 5, 1),
+        due_date=date(2026, 5, 31),
+        po_number="PO-1",
+        bank_account="DE-OLD",
+        source_hash="invoice-hash",
+        raw_payload="{}",
+    )
+    first_invoice_payment = Payment(
+        id="pay-1",
+        vendor_id=vendor.id,
+        vendor_name=vendor.name,
+        amount_cents=500000,
+        currency="EUR",
+        payment_date=date(2026, 5, 2),
+        bank_account="DE-OLD",
+        reference="INV-001",
+        source_hash="payment-hash-1",
+        raw_payload="{}",
+    )
+    second_invoice_payment = Payment(
+        id="pay-2",
+        vendor_id=vendor.id,
+        vendor_name=vendor.name,
+        amount_cents=500000,
+        currency="EUR",
+        payment_date=date(2026, 5, 3),
+        bank_account="DE-OLD",
+        reference="INV-002",
+        source_hash="payment-hash-2",
+        raw_payload="{}",
+    )
+
+    match = MatchingEngine().find_best_match(
+        invoice,
+        [first_invoice_payment, second_invoice_payment],
+        [],
+    )
+    exceptions = ExceptionDetector().detect_for_invoice(
+        invoice,
+        match,
+        [first_invoice_payment, second_invoice_payment],
+    )
+
+    assert "duplicate_payment" not in {exception.exception_type for exception in exceptions}
+
+
+def test_reference_compatibility_does_not_confuse_invoice_number_prefixes():
+    assert references_are_compatible("INV-001", "Payment for INV-001 duplicate")
+    assert not references_are_compatible("INV-001", "INV-0010")
 
 
 def test_audit_hash_chain_links_events(db_session):

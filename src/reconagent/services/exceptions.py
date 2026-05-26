@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import date
 
+from reconagent.domain.normalization import normalize_reference
 from reconagent.models import Invoice, LedgerEntry, Payment
 from reconagent.services.matching import MatchResult
 
@@ -97,7 +99,10 @@ class ExceptionDetector:
         duplicates: list[DetectedException] = []
         for index, payment in enumerate(related):
             for other in related[index + 1 :]:
-                if abs((payment.payment_date - other.payment_date).days) <= 7:
+                if (
+                    abs((payment.payment_date - other.payment_date).days) <= 7
+                    and references_are_compatible(payment.reference, other.reference)
+                ):
                     duplicates.append(
                         DetectedException(
                             "duplicate_payment",
@@ -138,3 +143,28 @@ def dedupe_exceptions(exceptions: list[DetectedException]) -> list[DetectedExcep
             output.append(exc)
             seen.add(key)
     return output
+
+
+def references_are_compatible(first_reference: str, second_reference: str) -> bool:
+    first = normalize_reference(first_reference)
+    second = normalize_reference(second_reference)
+    if not first or not second:
+        return True
+    if first == second:
+        return True
+    return token_sequence_contains(reference_tokens(first_reference), reference_tokens(second_reference))
+
+
+def reference_tokens(reference: str) -> list[str]:
+    return re.findall(r"[a-z0-9]+", reference.lower())
+
+
+def token_sequence_contains(first_tokens: list[str], second_tokens: list[str]) -> bool:
+    shorter, longer = sorted((first_tokens, second_tokens), key=len)
+    if not shorter:
+        return False
+    window_size = len(shorter)
+    return any(
+        longer[index : index + window_size] == shorter
+        for index in range(len(longer) - window_size + 1)
+    )
