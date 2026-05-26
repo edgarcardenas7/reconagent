@@ -1,10 +1,26 @@
+ROLE_FINANCE_ANALYST = "finance_analyst"
+ROLE_CONTROLLER = "controller"
+ROLE_CFO = "cfo"
+
+ACTION_APPROVE = "approve"
+ACTION_HOLD_FOR_REVIEW = "hold_for_review"
+ACTION_REQUEST_DOCUMENT = "request_document"
+ACTION_SEND_FOLLOW_UP = "send_follow_up"
+ACTION_ESCALATE_TO_CONTROLLER = "escalate_to_controller"
+
 DEMO_USERS = {
-    "analyst": {"role": "finance_analyst"},
-    "controller": {"role": "controller"},
-    "cfo": {"role": "cfo"},
+    "analyst": {"role": ROLE_FINANCE_ANALYST},
+    "controller": {"role": ROLE_CONTROLLER},
+    "cfo": {"role": ROLE_CFO},
 }
 
-HIGH_RISK_ACTIONS = {"hold_for_review", "escalate_to_controller"}
+ALLOWED_ROLES_BY_ACTION = {
+    ACTION_APPROVE: {ROLE_FINANCE_ANALYST, ROLE_CONTROLLER, ROLE_CFO},
+    ACTION_HOLD_FOR_REVIEW: {ROLE_CONTROLLER, ROLE_CFO},
+    ACTION_REQUEST_DOCUMENT: {ROLE_FINANCE_ANALYST, ROLE_CONTROLLER, ROLE_CFO},
+    ACTION_SEND_FOLLOW_UP: {ROLE_FINANCE_ANALYST, ROLE_CONTROLLER, ROLE_CFO},
+    ACTION_ESCALATE_TO_CONTROLLER: {ROLE_CONTROLLER, ROLE_CFO},
+}
 
 
 def can_decide(actor_id: str, proposed_action: str) -> bool:
@@ -12,8 +28,7 @@ def can_decide(actor_id: str, proposed_action: str) -> bool:
     if not user:
         return False
     role = user["role"]
-    if proposed_action == "escalate_to_controller":
-        return role in {"controller", "cfo"}
-    if proposed_action in HIGH_RISK_ACTIONS:
-        return role in {"controller", "cfo"}
-    return role in {"finance_analyst", "controller", "cfo"}
+    allowed_roles = ALLOWED_ROLES_BY_ACTION.get(proposed_action)
+    if not allowed_roles:
+        return False
+    return role in allowed_roles
