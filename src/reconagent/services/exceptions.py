@@ -9,6 +9,20 @@ from reconagent.models import Invoice, LedgerEntry, Payment
 from reconagent.services.matching import MatchResult
 
 
+SEVERITY_MEDIUM = "medium"
+SEVERITY_HIGH = "high"
+
+EXCEPTION_UNMATCHED_INVOICE = "unmatched_invoice"
+EXCEPTION_MISSING_PO = "missing_po"
+EXCEPTION_AMOUNT_MISMATCH = "amount_mismatch"
+EXCEPTION_CHANGED_BANK_ACCOUNT = "changed_bank_account"
+EXCEPTION_OVERDUE_INVOICE = "overdue_invoice"
+EXCEPTION_DUPLICATE_PAYMENT = "duplicate_payment"
+EXCEPTION_UNMATCHED_LEDGER_ENTRY = "unmatched_ledger_entry"
+
+DUPLICATE_PAYMENT_WINDOW_DAYS = 7
+
+
 @dataclass(frozen=True)
 class DetectedException:
     exception_type: str
@@ -33,8 +47,8 @@ class ExceptionDetector:
         if match.status == "unmatched":
             exceptions.append(
                 DetectedException(
-                    "unmatched_invoice",
-                    "medium",
+                    EXCEPTION_UNMATCHED_INVOICE,
+                    SEVERITY_MEDIUM,
                     f"Invoice {invoice.invoice_number} does not have a confident payment match.",
                     invoice=invoice,
                 )
@@ -43,8 +57,8 @@ class ExceptionDetector:
         if not invoice.po_number:
             exceptions.append(
                 DetectedException(
-                    "missing_po",
-                    "medium",
+                    EXCEPTION_MISSING_PO,
+                    SEVERITY_MEDIUM,
                     f"Invoice {invoice.invoice_number} has no purchase order number.",
                     invoice=invoice,
                     payment=match.payment,
@@ -54,8 +68,8 @@ class ExceptionDetector:
         if match.payment and invoice.amount_cents != match.payment.amount_cents:
             exceptions.append(
                 DetectedException(
-                    "amount_mismatch",
-                    "high",
+                    EXCEPTION_AMOUNT_MISMATCH,
+                    SEVERITY_HIGH,
                     f"Invoice {invoice.invoice_number} amount does not equal matched payment amount.",
                     invoice=invoice,
                     payment=match.payment,
@@ -65,8 +79,8 @@ class ExceptionDetector:
         if match.payment and invoice.bank_account and invoice.bank_account != match.payment.bank_account:
             exceptions.append(
                 DetectedException(
-                    "changed_bank_account",
-                    "high",
+                    EXCEPTION_CHANGED_BANK_ACCOUNT,
+                    SEVERITY_HIGH,
                     f"Vendor bank account differs between invoice {invoice.invoice_number} and payment.",
                     invoice=invoice,
                     payment=match.payment,
@@ -76,8 +90,8 @@ class ExceptionDetector:
         if invoice.due_date < today and not match.payment:
             exceptions.append(
                 DetectedException(
-                    "overdue_invoice",
-                    "medium",
+                    EXCEPTION_OVERDUE_INVOICE,
+                    SEVERITY_MEDIUM,
                     f"Invoice {invoice.invoice_number} is overdue and no payment was matched.",
                     invoice=invoice,
                 )
@@ -100,14 +114,16 @@ class ExceptionDetector:
         for index, payment in enumerate(related):
             for other in related[index + 1 :]:
                 if (
-                    abs((payment.payment_date - other.payment_date).days) <= 7
+                    abs((payment.payment_date - other.payment_date).days)
+                    <= DUPLICATE_PAYMENT_WINDOW_DAYS
                     and references_are_compatible(payment.reference, other.reference)
                 ):
                     duplicates.append(
                         DetectedException(
-                            "duplicate_payment",
-                            "high",
-                            f"Vendor {invoice.vendor_name} has duplicate-sized payments within 7 days.",
+                            EXCEPTION_DUPLICATE_PAYMENT,
+                            SEVERITY_HIGH,
+                            f"Vendor {invoice.vendor_name} has duplicate-sized payments within "
+                            f"{DUPLICATE_PAYMENT_WINDOW_DAYS} days.",
                             invoice=invoice,
                             payment=other,
                         )
@@ -119,8 +135,8 @@ class ExceptionDetector:
     ) -> list[DetectedException]:
         return [
             DetectedException(
-                "unmatched_ledger_entry",
-                "medium",
+                EXCEPTION_UNMATCHED_LEDGER_ENTRY,
+                SEVERITY_MEDIUM,
                 f"Ledger entry {entry.reference} was not tied to a reconciled invoice.",
                 ledger_entry=entry,
             )
