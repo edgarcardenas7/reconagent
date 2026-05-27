@@ -10,6 +10,11 @@ from reconagent.services.audit import AuditService
 from reconagent.services.auth import can_decide
 
 
+DECISION_APPROVED = "approved"
+DECISION_REJECTED = "rejected"
+ALLOWED_DECISIONS = {DECISION_APPROVED, DECISION_REJECTED}
+
+
 class ApprovalService:
     def __init__(self) -> None:
         self.audit = AuditService()
@@ -28,6 +33,8 @@ class ApprovalService:
             raise HTTPException(status_code=404, detail="Approval not found")
         if approval.status != "pending":
             raise HTTPException(status_code=409, detail="Approval is already decided")
+        if decision not in ALLOWED_DECISIONS:
+            raise HTTPException(status_code=422, detail="Decision must be approved or rejected")
         if not can_decide(actor_id, approval.proposed_action):
             raise HTTPException(status_code=403, detail="Actor cannot decide this approval")
 
@@ -38,7 +45,7 @@ class ApprovalService:
         approval.decided_at = datetime.now(UTC)
         approval.note = note
         if exception:
-            exception.status = "approved" if decision == "approved" else "rejected"
+            exception.status = DECISION_APPROVED if decision == DECISION_APPROVED else DECISION_REJECTED
 
         self.audit.append_event(
             session,
