@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import re
 import ast
+import re
 from dataclasses import dataclass
 
 from sqlalchemy import select
@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 
 from reconagent.models import PolicyChunk
 from reconagent.services.embeddings import cosine_similarity, local_text_embedding
+
+MIN_TOKEN_LENGTH = 3
 
 
 @dataclass(frozen=True)
@@ -30,8 +32,8 @@ class PolicyRetriever:
         best = max(
             chunks,
             key=lambda chunk: (
-                vector_score(query_vector, chunk.embedding_json),
                 len(query_terms & token_set(chunk.chunk_text)),
+                vector_score(query_vector, chunk.embedding_json),
             ),
         )
         score = round(vector_score(query_vector, best.embedding_json) * 100)
@@ -39,7 +41,11 @@ class PolicyRetriever:
 
 
 def token_set(text: str) -> set[str]:
-    return {token for token in re.findall(r"[a-z0-9_]+", text.lower()) if len(token) > 2}
+    return {
+        token
+        for token in re.findall(r"[a-z0-9_]+", text.lower())
+        if len(token) >= MIN_TOKEN_LENGTH
+    }
 
 
 def vector_score(query_vector: list[float], embedding_json: str | None) -> float:

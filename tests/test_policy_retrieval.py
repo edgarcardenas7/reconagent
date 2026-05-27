@@ -1,3 +1,4 @@
+from reconagent.models import FinancePolicy, PolicyChunk
 from reconagent.services.embeddings import local_text_embedding
 from reconagent.services.imports import import_policies
 from reconagent.services.policies import PolicyRetriever
@@ -16,3 +17,39 @@ def test_policy_retrieval_uses_stored_embeddings(db_session):
     assert "Changed bank accounts" in citation.text
     assert citation.score > 0
     assert local_text_embedding(citation.text)
+
+
+def test_policy_retrieval_prefers_explicit_business_terms_over_vector_noise(db_session):
+    query = "changed bank account mismatch"
+    unrelated = FinancePolicy(
+        title="Office expenses",
+        body="Team lunches and travel receipts require monthly manager review.",
+        risk_level="low",
+    )
+    relevant = FinancePolicy(
+        title="Bank account controls",
+        body="Changed bank accounts must be escalated to a controller before payment.",
+        risk_level="high",
+    )
+    db_session.add_all([unrelated, relevant])
+    db_session.flush()
+
+    db_session.add_all(
+        [
+            PolicyChunk(
+                policy_id=unrelated.id,
+                chunk_text=unrelated.body,
+                embedding_json=str(local_text_embedding(query)),
+            ),
+            PolicyChunk(
+                policy_id=relevant.id,
+                chunk_text=relevant.body,
+                embedding_json=str([0.0] * 64),
+            ),
+        ]
+    )
+    db_session.commit()
+
+    citation = PolicyRetriever().retrieve(db_session, query)
+
+    assert "Changed bank accounts" in citation.text
