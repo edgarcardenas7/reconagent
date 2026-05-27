@@ -52,6 +52,39 @@ class AuditService:
         event = session.scalar(select(AuditEvent).order_by(desc(AuditEvent.created_at), desc(AuditEvent.id)))
         return event.event_hash if event else GENESIS_HASH
 
+    def verify_chain(self, session: Session) -> bool:
+        events = list(session.scalars(select(AuditEvent)))
+        if not events:
+            return True
+
+        visited_ids: set[str] = set()
+        expected_previous_hash = GENESIS_HASH
+        while len(visited_ids) < len(events):
+            next_events = [
+                event
+                for event in events
+                if event.previous_hash == expected_previous_hash and event.id not in visited_ids
+            ]
+            if len(next_events) != 1:
+                return False
+
+            event = next_events[0]
+            expected_event_hash = compute_event_hash(
+                previous_hash=event.previous_hash,
+                entity_type=event.entity_type,
+                entity_id=event.entity_id,
+                actor_id=event.actor_id,
+                action=event.action,
+                payload_json=event.payload_json,
+            )
+            if event.event_hash != expected_event_hash:
+                return False
+
+            visited_ids.add(event.id)
+            expected_previous_hash = event.event_hash
+
+        return True
+
 
 def canonical_json(payload: dict) -> str:
     return json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
