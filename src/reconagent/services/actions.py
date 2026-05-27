@@ -7,6 +7,27 @@ from reconagent.config import get_settings
 from reconagent.services.exceptions import DetectedException
 from reconagent.services.policies import PolicyCitation
 
+ACTION_APPROVE = "approve"
+ACTION_HOLD_FOR_REVIEW = "hold_for_review"
+ACTION_REQUEST_DOCUMENT = "request_document"
+ACTION_SEND_FOLLOW_UP = "send_follow_up"
+ACTION_ESCALATE_TO_CONTROLLER = "escalate_to_controller"
+
+ALLOWED_ACTIONS = {
+    ACTION_APPROVE,
+    ACTION_HOLD_FOR_REVIEW,
+    ACTION_REQUEST_DOCUMENT,
+    ACTION_SEND_FOLLOW_UP,
+    ACTION_ESCALATE_TO_CONTROLLER,
+}
+
+ACTIONS_REQUIRING_APPROVAL = {
+    ACTION_APPROVE,
+    ACTION_HOLD_FOR_REVIEW,
+    ACTION_REQUEST_DOCUMENT,
+    ACTION_ESCALATE_TO_CONTROLLER,
+}
+
 
 @dataclass(frozen=True)
 class ProposedAction:
@@ -26,19 +47,23 @@ class ActionRecommender:
         self, exception: DetectedException, citation: PolicyCitation
     ) -> ProposedAction:
         mapping = {
-            "duplicate_payment": "hold_for_review",
-            "amount_mismatch": "hold_for_review",
-            "missing_po": "request_document",
-            "changed_bank_account": "escalate_to_controller",
-            "overdue_invoice": "send_follow_up",
-            "unmatched_invoice": "hold_for_review",
-            "unmatched_ledger_entry": "hold_for_review",
+            "duplicate_payment": ACTION_HOLD_FOR_REVIEW,
+            "amount_mismatch": ACTION_HOLD_FOR_REVIEW,
+            "missing_po": ACTION_REQUEST_DOCUMENT,
+            "changed_bank_account": ACTION_ESCALATE_TO_CONTROLLER,
+            "overdue_invoice": ACTION_SEND_FOLLOW_UP,
+            "unmatched_invoice": ACTION_HOLD_FOR_REVIEW,
+            "unmatched_ledger_entry": ACTION_HOLD_FOR_REVIEW,
         }
-        action = mapping.get(exception.exception_type, "hold_for_review")
+        action = mapping.get(exception.exception_type, ACTION_HOLD_FOR_REVIEW)
         explanation = (
             f"{exception.explanation} Relevant policy context: {citation.text[:350]}"
         )
-        return ProposedAction(action, explanation, requires_approval=action != "send_follow_up")
+        return ProposedAction(
+            action,
+            explanation,
+            requires_approval=action in ACTIONS_REQUIRING_APPROVAL,
+        )
 
     def llm_recommendation(
         self,
@@ -75,18 +100,25 @@ class ActionRecommender:
             )
             raw = response.output_text
             data = json.loads(raw)
-            if data["action"] not in {
-                "approve",
-                "hold_for_review",
-                "request_document",
-                "send_follow_up",
-                "escalate_to_controller",
-            }:
-                return fallback
-            return ProposedAction(
-                data["action"],
-                data.get("explanation", fallback.explanation),
-                bool(data.get("requires_approval", True)),
-            )
+            return coerce_llm_recommendation(data, fallback)
         except Exception:
             return fallback
+
+
+def coerce_llm_recommendation(data: dict, fallback: ProposedAction) -> ProposedAction:
+    action = data.get("action")
+    if action not in ALLOWED_ACTIONS:
+        return fallback
+
+    model_requires_approval = bool(data.get("requires_approval", True))
+    action_requires_approval = action in ACTIONS_REQUIRING_APPROVAL
+    requires_approval = (
+        fallback.requires_approval
+        or action_requires_approval
+        or model_requires_approval
+    )
+    return ProposedAction(
+        action,
+        data.get("explanation", fallback.explanation),
+        requires_approval,
+    )
