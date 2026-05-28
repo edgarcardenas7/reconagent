@@ -75,14 +75,8 @@ ReconAgent targets the shared backend/AI bottleneck:
 - **ReconAgent mapping:** policy-backed explanations and approval gates.
 - **Demo angle:** lending-adjacent risk memo from invoice/payment discrepancies.
 
-## Active Recall
+## Shared Product Pattern
 
-1. What is the common backend problem across these companies?
-2. Why is reconciliation a stronger portfolio niche than a generic RAG chatbot?
-3. Which companies care most about AP controls, and which care most about AR follow-up?
-
-## Feynman Explanation
-
-Estas empresas no solo necesitan IA que lea datos. Necesitan sistemas que puedan tomar datos
-financieros desordenados, detectar errores, explicar el riesgo, pedir aprobación y dejar evidencia.
-ReconAgent demuestra exactamente ese flujo.
+These companies do not only need AI that reads finance data. They need systems that turn messy
+financial inputs into controlled actions: reconciliation, exception detection, policy-backed
+recommendations, human approval, and durable evidence.

@@ -32,7 +32,7 @@ matching rules and approvals. High-risk actions require a controller or CFO acto
 ReconAgent uses reconciliation run statuses, deterministic fallbacks, failure-mode docs, evals, and
 hash-chained audit events.
 
-## Interview Sentence
+## Portfolio Positioning
 
 "I intentionally made the AI advisory rather than authoritative: deterministic matching owns
 financial truth, while the AI explains exceptions and proposes actions inside approval and audit

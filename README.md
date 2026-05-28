@@ -6,8 +6,8 @@ automation: AP/AR reconciliation, treasury approvals, exception handling, and au
 
 The portfolio thesis is:
 
-> I studied finance-ops automation companies, found the repeated backend/AI bottleneck, and
-> built a focused reconciliation system that maps directly to their product and hiring needs.
+> Finance-ops automation companies share a repeated backend/AI bottleneck: reconciling messy
+> financial records, detecting risky exceptions, routing approvals, and preserving audit evidence.
 
 ## What It Does
 
@@ -53,17 +53,13 @@ curl -F "file=@demo/sample-data/policies.csv" http://127.0.0.1:8000/api/v1/impor
 curl -X POST http://127.0.0.1:8000/api/v1/reconciliation-runs
 ```
 
-## Architecture Learning Path
+## Technical Docs
 
-Read these in order:
+- `docs/PRODUCT_THESIS.md`: portfolio thesis, target company mapping, and system positioning.
+- `docs/company-research.md`: finance-ops company research behind the project scope.
+- `docs/job-bulletpoint-mapping.md`: mapping from common backend/AI role expectations to this repo.
+- `docs/ARCHITECTURE.md`: architecture decisions and service responsibilities.
+- `docs/FAILURE_MODES.md`: operational risks, mitigations, and explicit v1 gaps.
+- `docs/EVALS.md`: implemented metrics and why denominators are reported next to percentages.
 
-1. `docs/company-research.md`
-2. `docs/job-bulletpoint-mapping.md`
-3. `docs/ARCHITECTURE.md`
-4. `docs/FAILURE_MODES.md`
-5. `docs/EVALS.md`
-6. `docs/LEARNING_GUIDE.md`
-7. `docs/INTERVIEW_STORY.md`
-
-Each doc includes active recall and Feynman prompts so the architecture can be defended in
-interviews instead of treated as AI-generated code.
+Personal notes are intentionally excluded from the public repo.

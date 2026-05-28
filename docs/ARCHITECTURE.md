@@ -71,15 +71,12 @@ Reconciliation is modeled as a job because it can fail, retry, and take time. Fa
 - `services/audit.py`: hash-chain audit evidence.
 - `services/evals.py`: metrics generated from labeled cases.
 
-## Active Recall
+## Public Scope Boundaries
 
-1. Why does the matching engine run before the LLM?
-2. What would break if `amount` were stored as `Float`?
-3. Why is RQ a better conceptual fit than `BackgroundTasks`?
-4. Which layer owns approval permissions?
-
-## Feynman Explanation
-
-El sistema toma datos financieros, los limpia, los compara con reglas claras, detecta problemas,
-consulta políticas, propone una acción, pide aprobación si hay riesgo y deja una cadena de auditoría.
-La IA ayuda a explicar, pero no reemplaza los controles financieros.
+- The financial truth path is deterministic: normalized records, matching scores, exception rules,
+  approval checks, and audit events.
+- The AI path is advisory: it explains exceptions and proposes actions, but it cannot bypass
+  matching, permissions, or audit.
+- The ingestion layer starts with CSV. XML e-invoicing adapters such as PEPPOL UBL can be added
+  later without changing the reconciliation core.
+- v1 emphasizes correctness, auditability, and explainability over production-scale throughput.

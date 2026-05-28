@@ -4,7 +4,7 @@
 
 - **Risk:** The LLM does not respond or returns invalid JSON.
 - **Mitigation:** `ActionRecommender` catches failures and uses deterministic fallback actions.
-- **Interview point:** External AI services are treated as unreliable dependencies.
+- **Design point:** External AI services are treated as unreliable dependencies.
 
 ## Duplicate Payment Approved By Mistake
 
@@ -31,9 +31,3 @@
 
 - **Risk:** no finance policy has been imported.
 - **Mitigation:** policy retrieval returns an explicit fallback citation and deterministic rules still run.
-
-## Active Recall
-
-1. What happens if the LLM returns invalid JSON?
-2. Why should changed bank accounts be treated as high risk?
-3. What evidence exists after a run fails?

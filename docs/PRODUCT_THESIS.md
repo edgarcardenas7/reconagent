@@ -1,21 +1,22 @@
-# Interview Story
+# Product Thesis
 
-## Two-Minute Version
+## Positioning
 
-I built ReconAgent after studying AI-native finance automation companies such as Round Treasury,
-Upflow, Moss, Payhawk, Pleo, Spendesk, and Mollie. The repeated backend problem is reconciliation:
+ReconAgent is informed by AI-native finance automation companies such as Round
+Treasury, Upflow, Moss, Payhawk, Pleo, Spendesk, and Mollie. The repeated backend problem is
+reconciliation:
 finance teams need to match invoices, payments, and ledger entries, detect risky exceptions, route
 approvals, and keep audit evidence.
 
-I intentionally made the system rules-first. The matching engine owns financial truth with
+The system is intentionally rules-first. The matching engine owns financial truth with
 deterministic scoring. AI is used only to explain exceptions and propose actions, and high-risk
 actions require human approval. The architecture uses FastAPI, SQLAlchemy, PostgreSQL, Redis/RQ,
 policy retrieval, optional direct LLM calls, and hash-chained audit logs.
 
-The important decision is that this is not a chatbot. It is a finance control system where AI is
-bounded by deterministic matching, permissions, and auditability.
+The important product decision is that this is not a chatbot. It is a finance control system where
+AI is bounded by deterministic matching, permissions, and auditability.
 
-## Five-Minute Endpoint Deep Dive
+## Core Workflow
 
 Use `POST /api/v1/reconciliation-runs`.
 
@@ -29,9 +30,7 @@ Use `POST /api/v1/reconciliation-runs`.
 8. Risky exceptions create pending approvals.
 9. Audit events are appended with previous hash and event hash.
 
-## Ten-Minute System Design Walkthrough
-
-Start from the finance business problem, then explain each boundary:
+## System Boundaries
 
 - API boundary: receives CSVs and commands.
 - Normalization boundary: turns messy input into canonical records.
@@ -44,9 +43,9 @@ Start from the finance business problem, then explain each boundary:
 - Audit boundary: evidence chain.
 - Eval boundary: observed quality metrics.
 
-## Active Recall
+## Why This Is Specific To Finance Ops
 
-1. Say the portfolio thesis in one sentence.
-2. Explain why ReconAgent is not a generic RAG app.
-3. Explain the run lifecycle without looking at code.
-4. Explain one failure mode and its mitigation.
+Generic AI demos usually stop at "retrieve context and generate an answer." ReconAgent goes beyond
+that pattern by modeling finance-specific controls: exact money storage, deterministic
+reconciliation, named exception rules, approval authority, and tamper-evident audit events. Those
+controls map directly to operational problems in AP, AR, treasury, spend management, and payments.

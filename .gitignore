@@ -10,3 +10,7 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+
+# Private notes.
+docs/INTERVIEW_*.md
+docs/PRIVATE_*.md

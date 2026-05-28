@@ -26,9 +26,9 @@ ReconAgent does not claim fake portfolio metrics. Metrics must come from labeled
 - Policy citation coverage shows whether recommendations are backed by policy text.
 - Approval accuracy shows whether risky actions are routed to humans.
 
-## Active Recall
+## Current Limitations
 
-1. Why is `case_count` necessary next to percentage metrics?
-2. Why is false positive rate important for finance teams?
-3. Why is recall important for fraud-like exceptions?
-4. Which metric proves the system is not inventing policy context?
+- The current repository includes the metric calculation and test cases.
+- It does not claim production benchmark quality or a large external golden dataset.
+- A larger eval runner should add adversarial finance cases, company-specific scenarios, and
+  regression snapshots before any production claim.
