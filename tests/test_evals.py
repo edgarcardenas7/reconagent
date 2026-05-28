@@ -16,3 +16,7 @@ def test_eval_report_uses_observed_cases_not_fake_metrics():
     assert report["false_positive_rate"] == 0.0
     assert report["policy_citation_coverage"] == 0.5
     assert report["approval_required_accuracy"] == 0.6667
+    assert report["case_count"] == 3
+    assert report["predicted_match_count"] == 2
+    assert report["predicted_exception_count"] == 1
+    assert report["expected_exception_count"] == 2

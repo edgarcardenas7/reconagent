@@ -18,6 +18,10 @@ class EvalCase:
 def compute_eval_report(cases: list[EvalCase]) -> dict[str, float]:
     if not cases:
         return {
+            "case_count": 0,
+            "predicted_match_count": 0,
+            "predicted_exception_count": 0,
+            "expected_exception_count": 0,
             "matching_precision": 0.0,
             "exception_precision": 0.0,
             "exception_recall": 0.0,
@@ -40,6 +44,10 @@ def compute_eval_report(cases: list[EvalCase]) -> dict[str, float]:
     )
 
     return {
+        "case_count": len(cases),
+        "predicted_match_count": predicted_matches,
+        "predicted_exception_count": predicted_exceptions,
+        "expected_exception_count": expected_exceptions,
         "matching_precision": safe_div(true_matches, predicted_matches),
         "exception_precision": safe_div(true_exceptions, predicted_exceptions),
         "exception_recall": safe_div(true_exceptions, expected_exceptions),
