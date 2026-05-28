@@ -104,6 +104,10 @@ class ReconciliationService:
             session.commit()
             return run
         except Exception as exc:
+            session.rollback()
+            run = session.get(ReconciliationRun, run_id)
+            if not run:
+                raise
             run.status = "failed"
             run.error = str(exc)
             run.completed_at = datetime.now(UTC)
