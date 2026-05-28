@@ -49,6 +49,8 @@ class ReconciliationService:
         run = session.get(ReconciliationRun, run_id)
         if not run:
             raise ValueError(f"Unknown reconciliation run: {run_id}")
+        if run.status == "completed":
+            return run
 
         try:
             run.status = "processing"

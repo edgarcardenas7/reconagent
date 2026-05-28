@@ -55,3 +55,43 @@ def test_failed_reconciliation_run_does_not_commit_partial_matches(db_session):
     assert run.status == "failed"
     assert matches == []
     assert len(failed_events) == 1
+
+
+def test_completed_reconciliation_run_is_not_reprocessed(db_session):
+    vendor = Vendor(name="Acme GmbH", normalized_name="acme gmbh")
+    run = ReconciliationRun(status="completed")
+    db_session.add_all([vendor, run])
+    db_session.flush()
+
+    invoice = Invoice(
+        vendor_id=vendor.id,
+        vendor_name=vendor.name,
+        invoice_number="INV-001",
+        amount_cents=100000,
+        currency="EUR",
+        invoice_date=date(2026, 5, 1),
+        due_date=date(2026, 5, 31),
+        source_hash="invoice-hash",
+        raw_payload="{}",
+    )
+    db_session.add(invoice)
+    db_session.flush()
+    db_session.add(
+        ReconciliationMatch(
+            run_id=run.id,
+            invoice_id=invoice.id,
+            score=100,
+            score_components="{}",
+            status="matched",
+        )
+    )
+    db_session.commit()
+
+    processed = ReconciliationService().process_run(db_session, run.id)
+    matches = db_session.scalars(
+        select(ReconciliationMatch).where(ReconciliationMatch.run_id == run.id)
+    ).all()
+
+    assert processed.id == run.id
+    assert processed.status == "completed"
+    assert len(matches) == 1
