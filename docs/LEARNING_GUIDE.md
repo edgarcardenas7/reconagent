@@ -283,19 +283,20 @@ audit evidence."
 
 - `EvalCase`: one labeled scenario.
 - `compute_eval_report`: calculates matching precision, exception precision/recall, false positive
-  rate, citation coverage, and approval accuracy.
+  rate, citation coverage, approval accuracy, and support counts.
 
 **Active recall:**
 
 1. Why is exception recall important?
 2. Why does false positive rate matter to finance teams?
-3. What metric tells us policy context was actually attached?
+3. Why should every percentage metric include a denominator such as `case_count`?
+4. What metric tells us policy context was actually attached?
 
 **Feynman explanation:**
 
 Los evals comparan lo que el sistema hizo contra casos esperados. Así puedes decir "esta métrica
-salió de estos casos", no "me inventé un número para el portafolio."
+salió de estos casos y con este denominador", no "me inventé un número para el portafolio."
 
 **Interview sentence:**
 
-"I only report metrics that are generated from labeled reconciliation cases."
+"I report eval percentages with support counts, because a metric without a denominator is not defensible."
