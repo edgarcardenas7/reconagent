@@ -13,6 +13,4 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -e ".[dev]"
-        working-directory: reconagent
       - run: pytest
-        working-directory: reconagent
