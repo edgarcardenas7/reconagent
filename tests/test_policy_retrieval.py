@@ -1,7 +1,7 @@
 from reconagent.models import FinancePolicy, PolicyChunk
 from reconagent.services.embeddings import local_text_embedding
 from reconagent.services.imports import import_policies
-from reconagent.services.policies import PolicyRetriever
+from reconagent.services.policies import PolicyRetriever, policy_query_for_exception
 
 
 def test_policy_retrieval_uses_stored_embeddings(db_session):
@@ -53,3 +53,37 @@ def test_policy_retrieval_prefers_explicit_business_terms_over_vector_noise(db_s
     citation = PolicyRetriever().retrieve(db_session, query)
 
     assert "Changed bank accounts" in citation.text
+
+
+def test_exception_policy_query_adds_domain_terms_for_missing_po(db_session):
+    import_policies(
+        db_session,
+        b"title,body,risk_level\n"
+        b"Duplicate payment policy,Duplicate payments inside seven days must be held for review. The controller must verify vendor invoice number payment reference and bank account before release.,high\n"
+        b"PO policy,Invoices without purchase orders require a document request before payment.,medium\n",
+    )
+
+    query = policy_query_for_exception(
+        "missing_po",
+        "Invoice INV-002 has no purchase order number.",
+    )
+    citation = PolicyRetriever().retrieve(db_session, query)
+
+    assert "purchase orders" in citation.text
+
+
+def test_exception_policy_query_adds_domain_terms_for_changed_bank_account(db_session):
+    import_policies(
+        db_session,
+        b"title,body,risk_level\n"
+        b"Duplicate payment policy,Duplicate payments inside seven days must be held for review. The controller must verify vendor invoice number payment reference and bank account before release.,high\n"
+        b"Bank account policy,Changed vendor bank accounts are high risk and must be escalated to the controller before payment.,high\n",
+    )
+
+    query = policy_query_for_exception(
+        "changed_bank_account",
+        "Vendor bank account differs between invoice INV-002 and payment.",
+    )
+    citation = PolicyRetriever().retrieve(db_session, query)
+
+    assert "Changed vendor bank accounts" in citation.text

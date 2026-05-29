@@ -2,3 +2,6 @@ title,body,risk_level
 Duplicate payment policy,"Duplicate payments inside seven days must be held for review. The controller must verify vendor, invoice number, payment reference, and bank account before release.",high
 PO policy,"Invoices without purchase orders require a document request before payment. Finance analysts may request documentation, but controllers approve payment release.",medium
 Bank account change policy,"Changed vendor bank accounts are high risk. Any bank account mismatch must be escalated to the controller and cannot be auto-approved.",high
+Unmatched invoice policy,"Invoices without confident payment matches must be held for review before month-end close. Finance should verify payment evidence and customer follow-up status.",medium
+Overdue invoice policy,"Overdue unpaid invoices require customer follow-up and aging review before month-end close. Finance should send a follow-up before escalating.",medium
+Ledger reconciliation policy,"Unmatched ledger entries must be investigated before close and tied back to invoice and payment evidence.",medium

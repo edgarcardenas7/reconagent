@@ -27,7 +27,8 @@ def test_full_api_flow_imports_reconciles_exceptions_and_audit(client, db_sessio
             "/api/v1/imports/policies",
             b"title,body,risk_level\n"
             b"Duplicate payment policy,Duplicate payments inside seven days must be held for review.,high\n"
-            b"PO policy,Invoices without purchase orders require a document request before payment.,medium\n",
+            b"PO policy,Invoices without purchase orders require a document request before payment.,medium\n"
+            b"Bank account policy,Changed vendor bank accounts are high risk and must be escalated to the controller before payment.,high\n",
         ),
     ]
     for path, content in uploads:
@@ -56,3 +57,8 @@ def test_full_api_flow_imports_reconciles_exceptions_and_audit(client, db_sessio
 
     db_exceptions = db_session.scalars(select(ReconciliationException)).all()
     assert all(exception.policy_citation for exception in db_exceptions)
+    citations_by_type = {
+        exception.exception_type: exception.policy_citation for exception in db_exceptions
+    }
+    assert "purchase orders" in citations_by_type["missing_po"]
+    assert "Changed vendor bank accounts" in citations_by_type["changed_bank_account"]

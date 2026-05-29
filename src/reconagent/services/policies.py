@@ -11,6 +11,31 @@ from reconagent.models import PolicyChunk
 from reconagent.services.embeddings import cosine_similarity, local_text_embedding
 
 MIN_TOKEN_LENGTH = 3
+EXCEPTION_POLICY_TERMS = {
+    "duplicate_payment": (
+        "duplicate payment duplicate payments seven days vendor invoice number payment reference "
+        "bank account hold review"
+    ),
+    "amount_mismatch": (
+        "amount mismatch invoice payment difference tolerance hold review"
+    ),
+    "missing_po": (
+        "missing po missing purchase order invoice without purchase order document request"
+    ),
+    "changed_bank_account": (
+        "changed bank account changed vendor bank accounts bank account mismatch controller "
+        "escalation high risk"
+    ),
+    "overdue_invoice": (
+        "overdue invoice late payment follow up unpaid invoice"
+    ),
+    "unmatched_invoice": (
+        "unmatched invoice no payment match hold review"
+    ),
+    "unmatched_ledger_entry": (
+        "unmatched ledger entry accounting consistency reconciled invoice ledger"
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -46,6 +71,11 @@ def token_set(text: str) -> set[str]:
         for token in re.findall(r"[a-z0-9_]+", text.lower())
         if len(token) >= MIN_TOKEN_LENGTH
     }
+
+
+def policy_query_for_exception(exception_type: str, explanation: str) -> str:
+    domain_terms = EXCEPTION_POLICY_TERMS.get(exception_type, exception_type.replace("_", " "))
+    return f"{domain_terms} {explanation}"
 
 
 def vector_score(query_vector: list[float], embedding_json: str | None) -> float:

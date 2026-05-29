@@ -18,7 +18,7 @@ from reconagent.services.actions import ActionRecommender
 from reconagent.services.audit import AuditService
 from reconagent.services.exceptions import DetectedException, ExceptionDetector
 from reconagent.services.matching import MatchingEngine, components_json
-from reconagent.services.policies import PolicyRetriever
+from reconagent.services.policies import PolicyRetriever, policy_query_for_exception
 
 
 class ReconciliationService:
@@ -128,7 +128,10 @@ class ReconciliationService:
     def persist_exception(
         self, session: Session, run_id: str, detected: DetectedException
     ) -> ReconciliationException:
-        citation = self.policies.retrieve(session, f"{detected.exception_type} {detected.explanation}")
+        citation = self.policies.retrieve(
+            session,
+            policy_query_for_exception(detected.exception_type, detected.explanation),
+        )
         recommendation = self.actions.recommend(detected, citation)
         record = ReconciliationException(
             run_id=run_id,
