@@ -53,7 +53,7 @@ def upgrade() -> None:
         sa.Column("po_number", sa.String(length=100)),
         sa.Column("bank_account", sa.String(length=64)),
         sa.Column("status", sa.String(length=40), nullable=False),
-        sa.Column("source_hash", sa.String(length=64), nullable=False),
+        sa.Column("source_hash", sa.String(length=64), nullable=False, unique=True),
         sa.Column("raw_payload", sa.Text(), nullable=False),
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
     )
@@ -68,7 +68,7 @@ def upgrade() -> None:
         sa.Column("bank_account", sa.String(length=64), nullable=False),
         sa.Column("reference", sa.String(length=255), nullable=False),
         sa.Column("status", sa.String(length=40), nullable=False),
-        sa.Column("source_hash", sa.String(length=64), nullable=False),
+        sa.Column("source_hash", sa.String(length=64), nullable=False, unique=True),
         sa.Column("raw_payload", sa.Text(), nullable=False),
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
     )
@@ -83,7 +83,7 @@ def upgrade() -> None:
         sa.Column("entry_date", sa.Date(), nullable=False),
         sa.Column("description", sa.String(length=255), nullable=False),
         sa.Column("reference", sa.String(length=255), nullable=False),
-        sa.Column("source_hash", sa.String(length=64), nullable=False),
+        sa.Column("source_hash", sa.String(length=64), nullable=False, unique=True),
         sa.Column("raw_payload", sa.Text(), nullable=False),
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
     )

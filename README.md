@@ -19,7 +19,7 @@ The portfolio thesis is:
 6. Produces an explainable proposed action with a deterministic fallback and optional direct LLM integration.
 7. Requires human approval for risky actions.
 8. Writes hash-chained audit events.
-9. Generates eval metrics from golden reconciliation cases.
+9. Generates eval metrics from labeled reconciliation test cases.
 
 ## Why This Is Not A Generic AI Project
 
@@ -33,11 +33,12 @@ exceptions and proposes actions inside approval and audit boundaries.
 ## Quickstart
 
 ```bash
+git clone https://github.com/edgarcardenas7/reconagent.git
 cd reconagent
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
-pytest
+python -m pytest
 uvicorn --app-dir src reconagent.main:app --reload
 ```
 
@@ -45,12 +46,16 @@ Open `http://127.0.0.1:8000/docs` for the API.
 
 ## Demo Flow
 
+Run these in another terminal while the API server is running:
+
 ```bash
 curl -F "file=@demo/sample-data/invoices.csv" http://127.0.0.1:8000/api/v1/imports/invoices
 curl -F "file=@demo/sample-data/payments.csv" http://127.0.0.1:8000/api/v1/imports/payments
 curl -F "file=@demo/sample-data/ledger_entries.csv" http://127.0.0.1:8000/api/v1/imports/ledger-entries
 curl -F "file=@demo/sample-data/policies.csv" http://127.0.0.1:8000/api/v1/imports/policies
 curl -X POST http://127.0.0.1:8000/api/v1/reconciliation-runs
+curl http://127.0.0.1:8000/api/v1/exceptions
+curl http://127.0.0.1:8000/api/v1/metrics/summary
 ```
 
 ## Technical Docs
@@ -61,5 +66,3 @@ curl -X POST http://127.0.0.1:8000/api/v1/reconciliation-runs
 - `docs/ARCHITECTURE.md`: architecture decisions and service responsibilities.
 - `docs/FAILURE_MODES.md`: operational risks, mitigations, and explicit v1 gaps.
 - `docs/EVALS.md`: implemented metrics and why denominators are reported next to percentages.
-
-Personal notes are intentionally excluded from the public repo.
